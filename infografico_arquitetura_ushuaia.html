@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquitetura do Sistema — Pousada Ushuaia</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0F1A;
+    --bg2: #0D1525;
+    --bg3: #111C2E;
+    --surface: #162035;
+    --border: rgba(80,140,220,0.18);
+    --border2: rgba(80,140,220,0.08);
+    --accent: #3B82F6;
+    --accent2: #60A5FA;
+    --accent3: #93C5FD;
+    --green: #10B981;
+    --green2: #34D399;
+    --purple: #8B5CF6;
+    --purple2: #A78BFA;
+    --orange: #F59E0B;
+    --orange2: #FCD34D;
+    --pink: #EC4899;
+    --cyan: #06B6D4;
+    --text: #E2E8F0;
+    --text2: #94A3B8;
+    --text3: #64748B;
+    --glow: 0 0 30px rgba(59,130,246,0.15);
+    --glow-green: 0 0 24px rgba(16,185,129,0.2);
+    --glow-purple: 0 0 24px rgba(139,92,246,0.2);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 32px 80px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    text-align: center;
+    margin-bottom: 64px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59,130,246,0.1);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 100px;
+    padding: 6px 18px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+
+  .header h1 span {
+    background: linear-gradient(135deg, var(--accent2), var(--purple2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .header p {
+    font-size: 16px;
+    color: var(--text2);
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── FLOW LEGEND ─── */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 48px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* ─── MAIN GRID ─── */
+  .arch-grid {
+    display: grid;
+    gap: 24px;
+  }
+
+  /* Row 1: Hóspede → WhatsApp → Evolution */
+  .row-entrada {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    animation: fadeUp 0.7s 0.1s ease both;
+  }
+
+  /* Row 2: Seta */
+  .row-arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 48px;
+  }
+
+  /* Row 3: N8N central + laterais */
+  .row-core {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 16px;
+    align-items: center;
+    animation: fadeUp 0.7s 0.3s ease both;
+  }
+
+  /* Row 4: seta */
+  /* Row 5: banco + relatórios */
+  .row-data {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    animation: fadeUp 0.7s 0.5s ease both;
+  }
+
+  /* Row 6: Fluxos operacionais */
+  .row-ops {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    animation: fadeUp 0.7s 0.7s ease both;
+  }
+
+  /* ─── CARD BASE ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  }
+
+  /* Variantes de borda superior colorida */
+  .card-blue   { border-top: 2px solid var(--accent); box-shadow: 0 4px 32px rgba(59,130,246,0.08); }
+  .card-green  { border-top: 2px solid var(--green);  box-shadow: 0 4px 32px rgba(16,185,129,0.08); }
+  .card-purple { border-top: 2px solid var(--purple); box-shadow: 0 4px 32px rgba(139,92,246,0.08); }
+  .card-orange { border-top: 2px solid var(--orange); box-shadow: 0 4px 32px rgba(245,158,11,0.08); }
+  .card-pink   { border-top: 2px solid var(--pink);   box-shadow: 0 4px 32px rgba(236,72,153,0.08); }
+  .card-cyan   { border-top: 2px solid var(--cyan);   box-shadow: 0 4px 32px rgba(6,182,212,0.08); }
+
+  .card-blue:hover   { box-shadow: var(--glow), 0 8px 40px rgba(59,130,246,0.14); }
+  .card-green:hover  { box-shadow: var(--glow-green), 0 8px 40px rgba(16,185,129,0.14); }
+  .card-purple:hover { box-shadow: var(--glow-purple), 0 8px 40px rgba(139,92,246,0.14); }
+
+  /* Card HERO (N8N central) */
+  .card-hero {
+    background: linear-gradient(145deg, #162035, #1A2A45);
+    border: 1px solid rgba(59,130,246,0.3);
+    border-top: 2px solid var(--accent);
+    border-radius: 20px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(59,130,246,0.1), 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  .card-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ─── CARD INNER ─── */
+  .card-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .card-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+
+  .card-hero .card-title {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .tag-blue   { background: rgba(59,130,246,0.12); color: var(--accent2); border: 1px solid rgba(59,130,246,0.2); }
+  .tag-green  { background: rgba(16,185,129,0.12); color: var(--green2);  border: 1px solid rgba(16,185,129,0.2); }
+  .tag-purple { background: rgba(139,92,246,0.12); color: var(--purple2); border: 1px solid rgba(139,92,246,0.2); }
+  .tag-orange { background: rgba(245,158,11,0.12); color: var(--orange2); border: 1px solid rgba(245,158,11,0.2); }
+  .tag-pink   { background: rgba(236,72,153,0.12); color: var(--pink);    border: 1px solid rgba(236,72,153,0.2); }
+  .tag-cyan   { background: rgba(6,182,212,0.12);  color: var(--cyan);    border: 1px solid rgba(6,182,212,0.2); }
+
+  /* ─── ARROWS ─── */
+  .arrow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  .arrow-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .arrow-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+  }
+
+  .arrow-shaft {
+    width: 2px;
+    height: 28px;
+    background: linear-gradient(to bottom, rgba(59,130,246,0.6), rgba(59,130,246,0.1));
+  }
+
+  .arrow-head {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid rgba(59,130,246,0.5);
+  }
+
+  /* Faixa de seção */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 4px;
+  }
+
+  .section-label span {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+
+  .section-label::before,
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border2);
+  }
+
+  /* ─── FLUXO OPERACIONAL ─── */
+  .flow-card {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .flow-number {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .flow-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .flow-steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .flow-steps li {
+    font-size: 11px;
+    color: var(--text2);
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  .flow-steps li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--text3);
+    font-size: 10px;
+  }
+
+  /* ─── VERSÕES ─── */
+  .versions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .version-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.2);
+    color: var(--purple2);
+  }
+
+  /* ─── SQL BADGES ─── */
+  .sql-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border2);
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .sql-item:last-child { border-bottom: none; }
+
+  .sql-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 24px;
+    animation: fadeUp 0.7s 0.9s ease both;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent2), var(--purple2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 300;
+  }
+
+  /* ─── CONNECTOR LINES SVG ─── */
+  .connector-section {
+    position: relative;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes flow {
+    0% { stroke-dashoffset: 20; }
+    100% { stroke-dashoffset: 0; }
+  }
+
+  /* ─── FOOTER ─── */
+  .footer {
+    text-align: center;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border2);
+    animation: fadeUp 0.7s 1s ease both;
+  }
+
+  .footer p {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+  }
+
+  /* Responsivo */
+  @media (max-width: 768px) {
+    .row-entrada, .row-core, .row-data { grid-template-columns: 1fr; }
+    .row-ops { grid-template-columns: 1fr 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-badge">Sistema em Produção · v6.0</div>
+    <h1>Arquitetura do Sistema<br><span>Pousada Ushuaia</span></h1>
+    <p>Automação completa de gestão hoteleira com Agentes de IA · N8N · Dify · Supabase · WhatsApp</p>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div> Camada de IA / LLM</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#10B981"></div> Orquestração N8N</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div> Banco de Dados</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div> Comunicação</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#EC4899"></div> Operações</div>
+  </div>
+
+  <div class="arch-grid">
+
+    <!-- ═══ CAMADA DE ENTRADA ═══ -->
+    <div class="section-label"><span>Camada de Entrada</span></div>
+
+    <div class="row-entrada">
+
+      <!-- Hóspede -->
+      <div class="card card-blue">
+        <span class="card-icon">👤</span>
+        <div class="card-label">Origem</div>
+        <div class="card-title">Hóspede</div>
+        <div class="card-desc">Envia mensagem de texto via WhatsApp solicitando hospedagem, Day Use ou informações.</div>
+        <div class="tag-list">
+          <span class="tag tag-blue">Hospedagem</span>
+          <span class="tag tag-blue">Day Use</span>
+          <span class="tag tag-blue">Pacotes</span>
+        </div>
+      </div>
+
+      <!-- WhatsApp / Evolution API -->
+      <div class="card card-orange">
+        <span class="card-icon">📱</span>
+        <div class="card-label">Canal</div>
+        <div class="card-title">WhatsApp</div>
+        <div class="card-desc">Canal primário de comunicação. Mensagens recebidas e enviadas via protocolo WA Business sem depender da API oficial do Meta.</div>
+        <div class="tag-list">
+          <span class="tag tag-orange">Evolution API</span>
+          <span class="tag tag-orange">Open-Source</span>
+        </div>
+      </div>
+
+      <!-- Equipe Administrativa -->
+      <div class="card card-pink">
+        <span class="card-icon">🏨</span>
+        <div class="card-label">Administração</div>
+        <div class="card-title">Equipe da Pousada</div>
+        <div class="card-desc">Aciona check-in, check-out e confirma pagamentos via comandos simples no WhatsApp.</div>
+        <div class="tag-list">
+          <span class="tag tag-pink">/checkin RSV123</span>
+          <span class="tag tag-pink">/checkout RSV123</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SETA 1 -->
+    <div class="arrow-row">
+      <div class="arrow-line">
+        <span class="arrow-label">webhook · mensagem</span>
+        <div class="arrow-shaft"></div>
+        <div class="arrow-head"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CAMADA DE INTELIGÊNCIA ═══ -->
+    <div class="section-label"><span>Camada de Inteligência (Agente de IA)</span></div>
+
+    <div class="row-core">
+
+      <!-- DIFY (esquerda) -->
+      <div class="card card-blue" style="align-self: start;">
+        <span class="card-icon">🧠</span>
+        <div class="card-label">LLM / Dify</div>
+        <div class="card-title">Agente Maria</div>
+        <div class="card-desc">Cérebro cognitivo do sistema. Interpreta intenção, gerencia persona e decide o próximo passo da conversa com base no estado atual.</div>
+        <div class="versions-row">
+          <span class="version-badge">V1</span>
+          <span class="version-badge">V2</span>
+          <span class="version-badge">V3</span>
+          <span class="version-badge">V4</span>
+          <span class="version-badge">V5</span>
+          <span class="version-badge">V6 ✦</span>
+        </div>
+        <div class="tag-list" style="margin-top:10px">
+          <span class="tag tag-blue">Persona</span>
+          <span class="tag tag-blue">ReAct</span>
+          <span class="tag tag-blue">State-aware</span>
+        </div>
+      </div>
+
+      <!-- N8N CENTRAL (hero) -->
+      <div class="card-hero">
+        <div class="card-label">Orquestração Central</div>
+        <div class="card-title">⚡ N8N Workflows</div>
+        <div class="card-desc" style="margin-bottom:16px;">Sistema motor do agente. Mantém estado da conversa entre mensagens, executa validações de negócio, aciona ações no banco e roteia notificações.</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.12); border-radius:10px; padding:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;">Estado / Memória</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.6;">Injeta variáveis de contexto no Dify a cada turno — tipo de serviço, datas, pessoas, confirmação</div>
+          </div>
+          <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.12); border-radius:10px; padding:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;">Validações</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.6;">Diárias mínimas, períodos de pacote, disponibilidade real, dados completos antes de criar reserva</div>
+          </div>
+          <div style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.12); border-radius:10px; padding:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;">Decisão de Fluxo</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.6;">coleta_dados → aguardar_confirmação → processar_reserva → notificar</div>
+          </div>
+          <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12); border-radius:10px; padding:12px;">
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;">Notificações</div>
+            <div style="font-size:11px;color:var(--text2);line-height:1.6;">Dispara para cliente e equipe em paralelo via Evolution API</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUPABASE (direita) -->
+      <div class="card card-purple" style="align-self: start;">
+        <span class="card-icon">🗄️</span>
+        <div class="card-label">Banco de Dados</div>
+        <div class="card-title">Supabase / PG</div>
+        <div class="card-desc">Camada de persistência e consistência transacional. Stored procedures validam independentemente das camadas acima.</div>
+        <div class="tag-list" style="margin-top:10px">
+          <div class="sql-item"><div class="sql-dot" style="background:var(--purple2)"></div>verificar_e_criar_reserva</div>
+          <div class="sql-item"><div class="sql-dot" style="background:var(--green2)"></div>confirmar_reserva_transacional</div>
+          <div class="sql-item"><div class="sql-dot" style="background:var(--orange2)"></div>limpar_bloqueios_expirados</div>
+          <div class="sql-item"><div class="sql-dot" style="background:var(--accent2)"></div>job_limpeza (pg_cron)</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SETA 2 -->
+    <div class="arrow-row">
+      <div class="arrow-line">
+        <span class="arrow-label">stored procedures · REST API</span>
+        <div class="arrow-shaft"></div>
+        <div class="arrow-head"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CAMADA DE DADOS ═══ -->
+    <div class="section-label"><span>Modelo de Dados (PostgreSQL)</span></div>
+
+    <div class="row-data">
+
+      <div class="card card-purple">
+        <span class="card-icon">📋</span>
+        <div class="card-label">Tabela principal</div>
+        <div class="card-title">reservas_confirmadas</div>
+        <div class="card-desc">Ciclo de vida completo da reserva.</div>
+        <div class="tag-list">
+          <span class="tag tag-purple">pendente</span>
+          <span class="tag tag-purple">confirmada</span>
+          <span class="tag tag-purple">check_in</span>
+          <span class="tag tag-purple">check_out</span>
+          <span class="tag tag-purple">expirada</span>
+        </div>
+      </div>
+
+      <div class="card card-cyan">
+        <span class="card-icon">🔒</span>
+        <div class="card-label">Disponibilidade</div>
+        <div class="card-title">disponibilidade_quartos</div>
+        <div class="card-desc">Controle por data e tipo de quarto. Bloqueios temporários de 30 min para reservas em andamento. Anti-overbooking com otimismo.</div>
+        <div class="tag-list">
+          <span class="tag tag-cyan">Bloqueio temp. 30min</span>
+          <span class="tag tag-cyan">pg_cron a cada 10min</span>
+        </div>
+      </div>
+
+      <div class="card card-green">
+        <span class="card-icon">📜</span>
+        <div class="card-label">Auditoria</div>
+        <div class="card-title">historico_status_reserva</div>
+        <div class="card-desc">Registro rastreável de todas as transições de status, responsável e motivo.</div>
+        <div class="tag-list">
+          <span class="tag tag-green">Imutável</span>
+          <span class="tag tag-green">Auditoria completa</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ FLUXOS OPERACIONAIS ═══ -->
+    <div class="section-label"><span>Fluxos Operacionais Automatizados</span></div>
+
+    <div class="row-ops">
+
+      <div class="flow-card" style="border-top:2px solid var(--accent);">
+        <div class="flow-number">01 · RESERVA</div>
+        <div class="flow-title">Fluxo de Reserva</div>
+        <ul class="flow-steps">
+          <li>Maria coleta dados</li>
+          <li>N8N valida disponibilidade</li>
+          <li>Cria reserva (pendente)</li>
+          <li>Gera código único</li>
+          <li>Envia instruções PIX</li>
+          <li>Confirma pagamento</li>
+        </ul>
+      </div>
+
+      <div class="flow-card" style="border-top:2px solid var(--green);">
+        <div class="flow-number">02 · CHECK-IN</div>
+        <div class="flow-title">Check-in Digital</div>
+        <ul class="flow-steps">
+          <li>Equipe: /checkin RSV123</li>
+          <li>N8N valida horário</li>
+          <li>Busca reserva no BD</li>
+          <li>Verifica elegibilidade</li>
+          <li>Atualiza status → check_in</li>
+          <li>Notifica cliente + admin</li>
+        </ul>
+      </div>
+
+      <div class="flow-card" style="border-top:2px solid var(--pink);">
+        <div class="flow-number">03 · CHECK-OUT</div>
+        <div class="flow-title">Check-out Digital</div>
+        <ul class="flow-steps">
+          <li>Equipe: /checkout RSV123</li>
+          <li>Avaliação do quarto</li>
+          <li>Notas limpeza/danos</li>
+          <li>Atualiza status → check_out</li>
+          <li>Alimenta fila limpeza</li>
+          <li>Notifica cliente + admin</li>
+        </ul>
+      </div>
+
+      <div class="flow-card" style="border-top:2px solid var(--orange);">
+        <div class="flow-number">04 · RELATÓRIOS</div>
+        <div class="flow-title">Automações Diárias</div>
+        <ul class="flow-steps">
+          <li>Check-ins do dia</li>
+          <li>Check-outs do dia</li>
+          <li>Reservas pendentes</li>
+          <li>Ocupação geral</li>
+          <li>Fila de limpeza</li>
+          <li>Entrega via WhatsApp</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- ═══ STATS ═══ -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Versões do agente<br>Maria (prompt)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Meses de<br>desenvolvimento</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">24/7</div>
+        <div class="stat-label">Atendimento<br>automatizado</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">4</div>
+        <div class="stat-label">Fluxos operacionais<br>automatizados</div>
+      </div>
+    </div>
+
+  </div><!-- /arch-grid -->
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <p>Jonh Selmo — Engenheiro de Automação e Sistemas de IA &nbsp;·&nbsp; N8N · Dify · Supabase · Evolution API · PostgreSQL</p>
+  </div>
+
+</div><!-- /container -->
+
+</body>
+</html>

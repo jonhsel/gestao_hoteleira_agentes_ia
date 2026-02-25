@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Da Recepção ao Banco de Dados — Pousada Ushuaia · Jonh Selmo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #111111;
+      --ink-light:  #444444;
+      --bg:         #ffffff;
+      --warm-mid:   #f7f7f7;
+      --accent:     #c0000a;
+      --accent-2:   #e8282f;
+      --rule:       #dddddd;
+      --code-bg:    #1e1e1e;
+      --code-text:  #f1f1f1;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--ink);
+      color: #fff;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-noise {
+      position: absolute; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.6;
+    }
+
+    /* Ornamento decorativo canto superior direito */
+    header::after {
+      content: '';
+      position: absolute;
+      top: 0; right: 0;
+      width: 260px; height: 260px;
+      background: radial-gradient(circle at top right, rgba(192,0,10,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .header-inner {
+      position: relative;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 72px 40px 60px;
+    }
+
+    .header-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--accent-2);
+      opacity: 0.45;
+      max-width: 80px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.1rem, 5vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: #fff;
+      margin-bottom: 32px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent-2);
+    }
+
+    .byline {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      padding-top: 24px;
+    }
+
+    .byline-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .byline-text {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      font-style: italic;
+    }
+
+    .byline-text strong {
+      display: block;
+      color: #fff;
+      font-style: normal;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress {
+      position: fixed; top: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      width: 0%;
+      z-index: 999;
+      transition: width 0.1s linear;
+    }
+
+    /* ── TOC ── */
+    nav.toc {
+      background: var(--warm-mid);
+      border-left: 3px solid var(--accent);
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 28px 40px;
+    }
+
+    nav.toc h2 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    nav.toc ol {
+      list-style: none;
+      counter-reset: toc;
+    }
+
+    nav.toc li {
+      counter-increment: toc;
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      padding: 4px 0;
+      border-bottom: 1px dotted var(--rule);
+    }
+
+    nav.toc li:last-child { border-bottom: none; }
+
+    nav.toc li::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    nav.toc a {
+      color: var(--ink-light);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 300;
+      transition: color 0.2s;
+    }
+
+    nav.toc a:hover { color: var(--accent); }
+
+    /* ── ARTICLE BODY ── */
+    .article-body {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 64px 40px 80px;
+    }
+
+    .lead {
+      font-size: 1.2em;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--ink-light);
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 40px;
+      margin-bottom: 56px;
+    }
+
+    .lead strong { color: var(--ink); font-weight: 600; }
+
+    /* ── SECTION HEADINGS ── */
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--ink);
+      margin: 64px 0 24px;
+      padding-top: 48px;
+      border-top: 2px solid var(--ink);
+      position: relative;
+    }
+
+    h2::before {
+      content: attr(data-num);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-style: italic;
+      font-weight: 400;
+      color: var(--accent);
+      margin: 40px 0 16px;
+    }
+
+    p { margin-bottom: 1.5em; }
+    p:last-child { margin-bottom: 0; }
+
+    strong { font-weight: 600; color: var(--ink); }
+    em { font-style: italic; }
+
+    /* ── LAYERS GRID (camadas da arquitetura) ── */
+    .layers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0;
+      margin: 36px 0 48px;
+      border: 1px solid var(--rule);
+      overflow: hidden;
+    }
+
+    .layer-card {
+      padding: 26px 20px;
+      border-right: 1px solid var(--rule);
+      position: relative;
+      background: #fff;
+      transition: background 0.2s;
+    }
+
+    .layer-card:last-child { border-right: none; }
+    .layer-card:hover { background: #fdf5f5; }
+
+    .layer-card::before {
+      content: '';
+      display: block;
+      height: 3px;
+      width: 100%;
+      position: absolute;
+      top: 0; left: 0;
+      background: var(--accent);
+      opacity: 0.25;
+    }
+
+    .layer-card:nth-child(1)::before { opacity: 0.15; }
+    .layer-card:nth-child(2)::before { opacity: 0.3; }
+    .layer-card:nth-child(3)::before { opacity: 0.55; }
+    .layer-card:nth-child(4)::before { opacity: 0.8; }
+
+    .layer-icon {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .layer-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .layer-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+
+    .layer-desc {
+      font-size: 13px;
+      color: var(--ink-light);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .layers-grid { grid-template-columns: 1fr 1fr; }
+      .layer-card { border-bottom: 1px solid var(--rule); border-right: none; }
+      .layer-card:nth-child(odd) { border-right: 1px solid var(--rule); }
+    }
+
+    /* ── FLOW STEPS ── */
+    .flow-steps {
+      counter-reset: step;
+      list-style: none;
+      margin: 28px 0;
+    }
+
+    .flow-steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 15.5px;
+      line-height: 1.65;
+    }
+
+    .flow-steps li:last-child { border-bottom: none; }
+
+    .flow-steps li::before {
+      content: counter(step, decimal-leading-zero);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      flex-shrink: 0;
+      padding-top: 3px;
+      min-width: 24px;
+    }
+
+    /* ── TECH GRID (comparativo de tecnologias) ── */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin: 36px 0 48px;
+    }
+
+    .tech-card {
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-top: 4px solid var(--rule);
+      padding: 24px 20px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .tech-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+    }
+
+    .tech-card.dify  { border-top-color: var(--accent); }
+    .tech-card.n8n   { border-top-color: #222; }
+    .tech-card.supa  { border-top-color: #555; }
+    .tech-card.evo   { border-top-color: var(--accent-2); }
+
+    .tech-card .card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .tech-card.dify .card-tag { color: var(--accent); }
+    .tech-card.n8n  .card-tag { color: #222; }
+    .tech-card.supa .card-tag { color: #555; }
+    .tech-card.evo  .card-tag { color: var(--accent-2); }
+
+    .tech-card .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--ink);
+    }
+
+    .tech-card .card-desc {
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--ink-light);
+      font-weight: 300;
+    }
+
+    .card-divider {
+      border: none;
+      border-top: 1px dashed var(--rule);
+      margin: 12px 0;
+    }
+
+    .card-pro, .card-con {
+      font-size: 13px;
+      line-height: 1.6;
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+
+    .card-pro::before { content: '✓'; color: #2a7a2a; flex-shrink: 0; font-weight: 700; }
+    .card-con::before { content: '✗'; color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
+    /* ── TIMELINE FASES ── */
+    .timeline {
+      margin: 32px 0;
+      position: relative;
+      padding-left: 28px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px; top: 0; bottom: 0;
+      width: 2px;
+      background: var(--rule);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 32px;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -25px; top: 6px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    .timeline-phase {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .timeline-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    .timeline-desc {
+      font-size: 14.5px;
+      color: var(--ink-light);
+      line-height: 1.65;
+    }
+
+    /* ── DB TABLE ── */
+    .params-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 28px 0;
+      font-size: 15px;
+    }
+
+    .params-table th {
+      background: var(--ink);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .params-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+
+    .params-table tr:nth-child(even) td { background: var(--warm-mid); }
+
+    .params-table td:first-child {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    /* ── AGENT CARDS ── */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    @media (max-width: 580px) { .agent-grid { grid-template-columns: 1fr; } }
+
+    .agent-card {
+      background: var(--ink);
+      color: #fff;
+      padding: 28px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .agent-card::before {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      opacity: 0.06;
+      background: #fff;
+    }
+
+    .agent-card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--accent-2);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .agent-card-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 14px;
+    }
+
+    .agent-card-desc {
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: rgba(255,255,255,0.78);
+      font-weight: 300;
+    }
+
+    /* ── BLOCKQUOTE ── */
+    blockquote {
+      margin: 32px 0;
+      padding: 24px 28px;
+      background: var(--warm-mid);
+      border-left: 4px solid var(--accent);
+      font-style: italic;
+      color: var(--ink-light);
+      position: relative;
+    }
+
+    blockquote::before {
+      content: '\201C';
+      font-family: 'Playfair Display', serif;
+      font-size: 5rem;
+      color: var(--accent);
+      opacity: 0.15;
+      position: absolute;
+      top: -10px; left: 10px;
+      line-height: 1;
+    }
+
+    blockquote p { margin: 0; font-size: 1.05em; position: relative; }
+
+    /* ── CODE ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+
+    /* ── CALLOUT ── */
+    .callout {
+      background: var(--ink);
+      color: #fff;
+      padding: 36px 40px;
+      margin: 48px 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .callout::after {
+      content: '◈';
+      position: absolute;
+      right: 24px; bottom: -16px;
+      font-size: 8rem;
+      opacity: 0.04;
+      line-height: 1;
+      color: var(--accent);
+    }
+
+    .callout-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent-2);
+      margin-bottom: 12px;
+    }
+
+    .callout p {
+      font-size: 1.05em;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.88);
+      margin: 0;
+    }
+
+    .callout strong { color: var(--accent-2); }
+
+    /* ── INLINE CALLOUT (borda lateral) ── */
+    .callout-inline {
+      border-left: 4px solid var(--accent);
+      background: #fdf5f5;
+      padding: 20px 24px;
+      margin: 28px 0;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--ink-light);
+      font-style: italic;
+    }
+
+    .callout-inline strong { color: var(--ink); font-style: normal; }
+
+    /* ── PROS/CONS ── */
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 24px 0;
+    }
+
+    @media (max-width: 600px) { .pros-cons { grid-template-columns: 1fr; } }
+
+    .pros-box, .cons-box {
+      padding: 20px;
+    }
+
+    .pros-box { background: #f2faf2; border-left: 3px solid #2a7a2a; }
+    .cons-box { background: #fdf5f5; border-left: 3px solid var(--accent); }
+
+    .pros-box h4, .cons-box h4 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .pros-box h4 { color: #2a7a2a; }
+    .cons-box h4 { color: var(--accent); }
+
+    .pros-box ul, .cons-box ul {
+      list-style: none;
+      font-size: 14.5px;
+      line-height: 1.65;
+    }
+
+    .pros-box li, .cons-box li { margin-bottom: 6px; }
+
+    /* ── VERSION BADGES ── */
+    .version-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .version-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid var(--rule);
+      color: var(--ink-light);
+      background: var(--warm-mid);
+    }
+
+    .version-badge.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: #fdf5f5;
+    }
+
+    /* ── CONCLUSION BOX ── */
+    .conclusion {
+      border: 2px solid var(--ink);
+      padding: 40px;
+      margin-top: 64px;
+      position: relative;
+    }
+
+    .conclusion-label {
+      position: absolute;
+      top: -13px; left: 24px;
+      background: var(--bg);
+      padding: 0 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    /* ── ORNAMENT ── */
+    .ornament {
+      text-align: center;
+      margin: 48px 0;
+      color: var(--accent);
+      font-size: 1.2rem;
+      letter-spacing: 0.5em;
+      opacity: 0.35;
+      user-select: none;
+    }
+
+    /* ── RULE ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 48px 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--ink);
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      padding: 40px;
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    footer strong {
+      color: #fff;
+      font-style: normal;
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      .header-inner, .article-body { padding-left: 24px; padding-right: 24px; }
+      nav.toc { padding-left: 24px; padding-right: 24px; }
+      .tech-grid { grid-template-columns: 1fr; }
+      .callout { padding: 24px; }
+      .conclusion { padding: 28px; }
+    }
+
+    /* ── INFOGRAPHIC WRAPPER ── */
+    .infographic-wrapper {
+      margin: 48px -40px;
+    }
+
+    .infographic-caption {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--ink-light);
+      margin-bottom: 12px;
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .infographic-caption::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    .infographic-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: #fdf5f5;
+      border: 1px solid rgba(192,0,10,0.2);
+      padding: 3px 9px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 640px) {
+      .infographic-wrapper { margin: 48px -24px; }
+      .infographic-caption { padding: 0 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="header-noise"></div>
+  <div class="header-inner">
+    <div class="header-label">Automação &nbsp;·&nbsp; Agentes de IA &nbsp;·&nbsp; N8N &nbsp;·&nbsp; Supabase</div>
+    <h1>Da Recepção ao <em>Banco de Dados</em></h1>
+    <p style="color:rgba(255,255,255,0.55);font-size:1rem;margin-bottom:28px;">Como automatizamos a gestão completa de uma pousada com Agentes de IA, N8N e Supabase</p>
+    <div class="byline">
+      <div class="byline-avatar">JS</div>
+      <div class="byline-text">
+        <strong>Jonh Selmo</strong>
+        Engenheiro de Automação e Sistemas de IA &nbsp;·&nbsp; N8N · Dify · Supabase · LLM Applications
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── TABLE OF CONTENTS ── -->
+<nav class="toc" aria-label="Índice">
+  <h2>Índice</h2>
+  <ol>
+    <li><a href="#negocio">O Negócio: Desafios Operacionais Reais</a></li>
+    <li><a href="#arquitetura">A Arquitetura: Um Ecossistema Integrado</a></li>
+    <li><a href="#agente">Maria Como Agente de IA</a></li>
+    <li><a href="#fluxo">Fluxo Completo de uma Reserva</a></li>
+    <li><a href="#tempo">Tempo de Desenvolvimento</a></li>
+    <li><a href="#desafios">Desafios Técnicos e Soluções</a></li>
+    <li><a href="#stack">Reflexões sobre a Stack</a></li>
+    <li><a href="#conclusao">Conclusões e Próximos Passos</a></li>
+  </ol>
+</nav>
+
+<!-- ── ARTICLE BODY ── -->
+<article class="article-body">
+
+  <!-- INTRO -->
+  <p class="lead fade-in">
+    A hospitalidade é, por natureza, um negócio de pessoas. Mas por trás de cada hóspede bem acolhido, há uma cadeia de processos operacionais que, quando feita manualmente, consome tempo, gera erros e sobrecarrega equipes pequenas. Este artigo descreve o projeto desenvolvido para a <strong>Pousada Ushuaia, localizada no Maranhão</strong> — uma solução completa de automação de gestão hoteleira, do atendimento ao hóspede até a manutenção do banco de dados, construída sobre Agentes de IA, N8N, Dify, Supabase e a API do WhatsApp.
+  </p>
+
+  <!-- ── SEÇÃO 1 ── -->
+  <h2 id="negocio" data-num="01 — O Negócio" class="fade-in">Uma Pousada Charmosa com Desafios Operacionais Reais</h2>
+
+  <p class="fade-in">A Pousada Ushuaia é um destino de turismo regional que oferece chalés, casas para grupos maiores e o serviço de Day Use — acesso às áreas de lazer sem pernoite. O público é predominantemente familiar e de casais, com picos de ocupação em feriados prolongados, quando a pousada opera com <strong>pacotes fechados</strong> de diárias mínimas.</p>
+
+  <p class="fade-in">O cenário operacional antes do projeto era típico de pequenos meios de hospedagem: atendimentos via WhatsApp feitos manualmente pela equipe, planilhas para controle de reservas, comunicação de check-in e check-out por mensagens de voz ou texto, e nenhuma automação de relatórios. Tudo funcionava — mas escalava mal. Em períodos de alta temporada, a equipe ficava sobrecarregada com tarefas repetitivas enquanto precisava, ao mesmo tempo, garantir a qualidade do atendimento presencial.</p>
+
+  <blockquote class="fade-in">
+    <p>Como manter o calor humano no atendimento sem depender exclusivamente de pessoas para tarefas que podem ser automatizadas?</p>
+  </blockquote>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 2 ── -->
+  <h2 id="arquitetura" data-num="02 — Arquitetura" class="fade-in">A Arquitetura: Um Ecossistema de Ferramentas Integradas</h2>
+
+  <p class="fade-in">A solução foi construída como um sistema modular, onde cada camada é responsável por uma classe de problemas específica. As tecnologias foram selecionadas deliberadamente para maximizar controle, flexibilidade e custo-benefício.</p>
+
+  <div class="layers-grid fade-in">
+    <div class="layer-card">
+      <span class="layer-icon">🧠</span>
+      <span class="layer-tag">Camada 1</span>
+      <div class="layer-title">IA Conversacional</div>
+      <div class="layer-desc">Dify + LLM. Agente Maria com memória de estado, persona e tomada de decisão linguística.</div>
+    </div>
+    <div class="layer-card">
+      <span class="layer-icon">⚡</span>
+      <span class="layer-tag">Camada 2</span>
+      <div class="layer-title">Orquestração</div>
+      <div class="layer-desc">N8N Workflows. Lógica de negócio, validações, gestão de estado e notificações.</div>
+    </div>
+    <div class="layer-card">
+      <span class="layer-icon">🗄️</span>
+      <span class="layer-tag">Camada 3</span>
+      <div class="layer-title">Dados</div>
+      <div class="layer-desc">Supabase / PostgreSQL. Stored procedures, bloqueios transacionais e auditoria completa.</div>
+    </div>
+    <div class="layer-card">
+      <span class="layer-icon">📱</span>
+      <span class="layer-tag">Camada 4</span>
+      <div class="layer-title">Comunicação</div>
+      <div class="layer-desc">Evolution API + WhatsApp. Canal bidirecional sem depender da API oficial do Meta.</div>
+    </div>
+  </div>
+
+  <h3>Dify + LLM — O Cérebro do Agente</h3>
+
+  <p class="fade-in">O coração do atendimento é <strong>Maria</strong>, um agente de IA com persona definida — calorosa, proativa e profissional — construída no Dify, plataforma open-source para orquestração de aplicações baseadas em LLMs. Maria é capaz de identificar automaticamente o tipo de serviço solicitado, conduzir a coleta de dados de forma natural, aplicar silenciosamente políticas internas sem revelá-las ao cliente e detectar pacotes especiais em datas comemorativas com tabelas de preços dinâmicas.</p>
+
+  <p class="fade-in">Um dos avanços mais importantes do projeto foi a distinção semântica entre <em>interesse</em> ("quero uma reserva") e <em>confirmação explícita</em> ("sim, confirmo") — eliminando pré-reservas prematuras. O prompt da Maria evoluiu por seis versões ao longo do projeto:</p>
+
+  <div class="version-row fade-in">
+    <span class="version-badge">V1 — Base</span>
+    <span class="version-badge">V2 — Day Use</span>
+    <span class="version-badge">V3 — Hospedagem</span>
+    <span class="version-badge">V4 — Estado</span>
+    <span class="version-badge">V5 — Confirmação</span>
+    <span class="version-badge active">V6 — Pacotes ✦</span>
+  </div>
+
+  <h3>N8N — O Sistema Motor</h3>
+
+  <p class="fade-in">O N8N funciona como o sistema nervoso da automação — conecta Maria ao banco de dados, processa decisões de negócio complexas e aciona as notificações corretas nos momentos certos. Ele mantém o estado da conversa entre mensagens, injetando variáveis de contexto atualizadas no Dify a cada turno.</p>
+
+  <div class="tech-grid fade-in">
+    <div class="tech-card n8n">
+      <span class="card-tag">Fluxo de Reservas</span>
+      <div class="card-title">Da coleta ao PIX</div>
+      <div class="card-desc">Verifica disponibilidade em tempo real, cria a reserva com status "pendente", gera código único e dispara instruções de pagamento via PIX.</div>
+    </div>
+    <div class="tech-card n8n">
+      <span class="card-tag">Check-in Digital</span>
+      <div class="card-title">/checkin RSV123</div>
+      <div class="card-desc">Equipe envia comando simples pelo WhatsApp. N8N valida horário, busca reserva, atualiza status e notifica cliente e admin em paralelo.</div>
+    </div>
+    <div class="tech-card n8n">
+      <span class="card-tag">Check-out + Avaliação</span>
+      <div class="card-title">/checkout RSV123</div>
+      <div class="card-desc">Inclui etapa de avaliação do estado do quarto. Notas de limpeza e danos alimentam automaticamente a fila de manutenção.</div>
+    </div>
+    <div class="tech-card n8n">
+      <span class="card-tag">Relatórios Diários</span>
+      <div class="card-title">Visibilidade total</div>
+      <div class="card-desc">Check-ins, check-outs, reservas pendentes e ocupação geral — gerados automaticamente e entregues no WhatsApp da gestão todo dia.</div>
+    </div>
+  </div>
+
+  <h3>Supabase / PostgreSQL — A Camada de Consistência</h3>
+
+  <p class="fade-in">O Supabase foi escolhido pela combinação de robustez relacional, API REST nativa e suporte a lógica transacional complexa via stored procedures. O modelo de dados suporta o ciclo completo de uma reserva:</p>
+
+  <table class="params-table fade-in">
+    <thead>
+      <tr>
+        <th>Tabela</th>
+        <th>Responsabilidade</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>reservas_confirmadas</td>
+        <td>Ciclo de vida completo: pendente → confirmada → check_in → check_out → expirada</td>
+      </tr>
+      <tr>
+        <td>disponibilidade_quartos</td>
+        <td>Controle por data e tipo de quarto; bloqueios temporários de 30 min (anti-overbooking)</td>
+      </tr>
+      <tr>
+        <td>historico_status_reserva</td>
+        <td>Auditoria imutável de todas as transições, responsável e motivo</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="fade-in">Para evitar overbooking em cenários de alta concorrência, foi implementado um sistema de <strong>bloqueio temporário otimista</strong>: ao iniciar uma reserva, o quarto é bloqueado por 30 minutos. Se o pagamento não for confirmado nesse período, jobs automáticos via <code>pg_cron</code> liberam o bloqueio. Os jobs rodam em três frequências: a cada 10 minutos para bloqueios expirados, a cada hora para reservas pendentes vencidas, e uma varredura profunda diária às 3h da manhã.</p>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── INFOGRÁFICO DE ARQUITETURA ── -->
+  <div class="infographic-wrapper fade-in">
+    <div class="infographic-caption">
+      <span class="infographic-label">Diagrama interativo</span>
+      Visão completa da arquitetura do sistema — passe o cursor sobre os cards para explorar cada camada
+    </div>
+    <div class="infographic-frame">
+
+      <!-- ════ ESTILOS ESCOPADOS DO INFOGRÁFICO ════ -->
+      <style>
+        .infographic-frame {
+          background: #0A0F1A;
+          border-radius: 12px;
+          padding: 40px 32px 48px;
+          margin: 0;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .infographic-frame::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+          background-size: 40px 40px;
+          pointer-events: none;
+        }
+
+        /* ── Fonte extra para o infográfico ── */
+        .ig-wrap { font-family: 'DM Sans', sans-serif; position: relative; z-index: 1; }
+
+        /* ── Legend ── */
+        .ig-legend {
+          display: flex; justify-content: center; gap: 20px;
+          flex-wrap: wrap; margin-bottom: 36px;
+        }
+        .ig-legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #94A3B8; font-family: 'Space Mono', monospace; }
+        .ig-legend-dot  { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ── Grid principal ── */
+        .ig-grid { display: grid; gap: 20px; }
+
+        .ig-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .ig-row-core { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 14px; align-items: start; }
+        .ig-row-data { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .ig-row-ops  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .ig-row-stats{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+        @media (max-width: 720px) {
+          .ig-row-3, .ig-row-core, .ig-row-data { grid-template-columns: 1fr; }
+          .ig-row-ops  { grid-template-columns: 1fr 1fr; }
+          .ig-row-stats{ grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ── Section label ── */
+        .ig-section-label {
+          display: flex; align-items: center; gap: 10px; margin: 4px 0;
+        }
+        .ig-section-label span {
+          font-family: 'Space Mono', monospace; font-size: 10px;
+          color: #64748B; text-transform: uppercase; letter-spacing: 0.12em; white-space: nowrap;
+        }
+        .ig-section-label::before,
+        .ig-section-label::after { content: ''; flex: 1; height: 1px; background: rgba(80,140,220,0.08); }
+
+        /* ── Arrow ── */
+        .ig-arrow {
+          display: flex; justify-content: center; align-items: center; padding: 2px 0;
+        }
+        .ig-arrow-inner { display: flex; flex-direction: column; align-items: center; }
+        .ig-arrow-lbl {
+          font-family: 'Space Mono', monospace; font-size: 10px; color: #64748B;
+          letter-spacing: 0.06em; text-transform: uppercase;
+          background: #0A0F1A; padding: 2px 8px; border-radius: 4px;
+          border: 1px solid rgba(80,140,220,0.08);
+        }
+        .ig-arrow-shaft { width: 2px; height: 24px; background: linear-gradient(to bottom, rgba(59,130,246,0.55), rgba(59,130,246,0.08)); }
+        .ig-arrow-head  { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid rgba(59,130,246,0.45); }
+
+        /* ── Cards base ── */
+        .ig-card {
+          background: #162035;
+          border: 1px solid rgba(80,140,220,0.18);
+          border-radius: 14px;
+          padding: 18px;
+          position: relative;
+          overflow: hidden;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ig-card:hover { transform: translateY(-2px); }
+        .ig-card::before {
+          content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+        }
+
+        .ig-card-blue   { border-top: 2px solid #3B82F6; box-shadow: 0 4px 28px rgba(59,130,246,0.07); }
+        .ig-card-green  { border-top: 2px solid #10B981; box-shadow: 0 4px 28px rgba(16,185,129,0.07); }
+        .ig-card-purple { border-top: 2px solid #8B5CF6; box-shadow: 0 4px 28px rgba(139,92,246,0.07); }
+        .ig-card-orange { border-top: 2px solid #F59E0B; box-shadow: 0 4px 28px rgba(245,158,11,0.07); }
+        .ig-card-pink   { border-top: 2px solid #EC4899; box-shadow: 0 4px 28px rgba(236,72,153,0.07); }
+        .ig-card-cyan   { border-top: 2px solid #06B6D4; box-shadow: 0 4px 28px rgba(6,182,212,0.07); }
+
+        .ig-card-blue:hover   { box-shadow: 0 0 28px rgba(59,130,246,0.14), 0 8px 36px rgba(59,130,246,0.12); }
+        .ig-card-green:hover  { box-shadow: 0 0 24px rgba(16,185,129,0.18), 0 8px 36px rgba(16,185,129,0.12); }
+        .ig-card-purple:hover { box-shadow: 0 0 24px rgba(139,92,246,0.18), 0 8px 36px rgba(139,92,246,0.12); }
+
+        /* Hero N8N */
+        .ig-card-hero {
+          background: linear-gradient(145deg, #162035, #1A2A45);
+          border: 1px solid rgba(59,130,246,0.28);
+          border-top: 2px solid #3B82F6;
+          border-radius: 18px;
+          padding: 24px;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 0 56px rgba(59,130,246,0.09), 0 8px 36px rgba(0,0,0,0.35);
+        }
+        .ig-card-hero::after {
+          content: ''; position: absolute; bottom: -36px; right: -36px;
+          width: 140px; height: 140px;
+          background: radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 70%);
+          pointer-events: none;
+        }
+
+        /* ── Card inner ── */
+        .ig-card-icon  { font-size: 26px; margin-bottom: 9px; display: block; }
+        .ig-card-lbl   { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #64748B; margin-bottom: 3px; }
+        .ig-card-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 7px; }
+        .ig-card-hero .ig-card-title { font-size: 20px; margin-bottom: 12px; }
+        .ig-card-desc  { font-size: 11.5px; color: #94A3B8; line-height: 1.6; font-weight: 300; }
+
+        /* Tags */
+        .ig-tag-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+        .ig-tag { font-family: 'Space Mono', monospace; font-size: 9.5px; padding: 3px 7px; border-radius: 4px; letter-spacing: 0.03em; }
+        .ig-tag-blue   { background: rgba(59,130,246,0.11); color: #60A5FA; border: 1px solid rgba(59,130,246,0.18); }
+        .ig-tag-green  { background: rgba(16,185,129,0.11); color: #34D399; border: 1px solid rgba(16,185,129,0.18); }
+        .ig-tag-purple { background: rgba(139,92,246,0.11); color: #A78BFA; border: 1px solid rgba(139,92,246,0.18); }
+        .ig-tag-orange { background: rgba(245,158,11,0.11); color: #FCD34D; border: 1px solid rgba(245,158,11,0.18); }
+        .ig-tag-pink   { background: rgba(236,72,153,0.11); color: #EC4899; border: 1px solid rgba(236,72,153,0.18); }
+        .ig-tag-cyan   { background: rgba(6,182,212,0.11);  color: #06B6D4; border: 1px solid rgba(6,182,212,0.18); }
+
+        /* Versões */
+        .ig-versions-row { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+        .ig-version-badge {
+          font-family: 'Space Mono', monospace; font-size: 9px; padding: 2px 6px; border-radius: 3px;
+          background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); color: #A78BFA;
+        }
+
+        /* SQL items */
+        .ig-sql-item { display: flex; align-items: center; gap: 7px; padding: 5px 0; border-bottom: 1px solid rgba(80,140,220,0.08); font-size: 10.5px; color: #94A3B8; }
+        .ig-sql-item:last-child { border-bottom: none; }
+        .ig-sql-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+        /* Hero sub-grid */
+        .ig-hero-subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+        .ig-hero-block {
+          background: rgba(59,130,246,0.05); border: 1px solid rgba(59,130,246,0.1);
+          border-radius: 9px; padding: 11px;
+        }
+        .ig-hero-block-title { font-family: 'Space Mono', monospace; font-size: 8.5px; color: #64748B; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.1em; }
+        .ig-hero-block-body  { font-size: 10.5px; color: #94A3B8; line-height: 1.55; }
+        .ig-hero-block.green { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.1); }
+        .ig-hero-block.purple{ background: rgba(139,92,246,0.05); border-color: rgba(139,92,246,0.1); }
+        .ig-hero-block.orange{ background: rgba(245,158,11,0.05);  border-color: rgba(245,158,11,0.1); }
+
+        /* Flow cards */
+        .ig-flow-card {
+          background: #111C2E; border: 1px solid rgba(80,140,220,0.08);
+          border-radius: 10px; padding: 14px;
+        }
+        .ig-flow-number { font-family: 'Space Mono', monospace; font-size: 9.5px; color: #64748B; margin-bottom: 5px; }
+        .ig-flow-title  { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; color: #E2E8F0; margin-bottom: 6px; }
+        .ig-flow-list   { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+        .ig-flow-list li { font-size: 10.5px; color: #94A3B8; padding-left: 12px; position: relative; line-height: 1.5; }
+        .ig-flow-list li::before { content: '→'; position: absolute; left: 0; color: #64748B; font-size: 9px; }
+
+        /* Stats */
+        .ig-stat-card { background: #111C2E; border: 1px solid rgba(80,140,220,0.08); border-radius: 10px; padding: 14px; text-align: center; }
+        .ig-stat-value {
+          font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800;
+          background: linear-gradient(135deg, #60A5FA, #A78BFA);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          line-height: 1; margin-bottom: 4px;
+        }
+        .ig-stat-label { font-size: 10.5px; color: #64748B; font-weight: 300; line-height: 1.4; }
+      </style>
+
+      <!-- ════ CONTEÚDO DO INFOGRÁFICO ════ -->
+      <div class="ig-wrap">
+
+        <!-- Legend -->
+        <div class="ig-legend">
+          <div class="ig-legend-item"><div class="ig-legend-dot" style="background:#3B82F6"></div> IA / LLM</div>
+          <div class="ig-legend-item"><div class="ig-legend-dot" style="background:#10B981"></div> N8N</div>
+          <div class="ig-legend-item"><div class="ig-legend-dot" style="background:#8B5CF6"></div> Banco de Dados</div>
+          <div class="ig-legend-item"><div class="ig-legend-dot" style="background:#F59E0B"></div> Comunicação</div>
+          <div class="ig-legend-item"><div class="ig-legend-dot" style="background:#EC4899"></div> Operações</div>
+        </div>
+
+        <div class="ig-grid">
+
+          <!-- CAMADA DE ENTRADA -->
+          <div class="ig-section-label"><span>Camada de Entrada</span></div>
+          <div class="ig-row-3">
+            <div class="ig-card ig-card-blue">
+              <span class="ig-card-icon">👤</span>
+              <div class="ig-card-lbl">Origem</div>
+              <div class="ig-card-title">Hóspede</div>
+              <div class="ig-card-desc">Envia mensagem via WhatsApp solicitando hospedagem, Day Use ou informações.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-blue">Hospedagem</span>
+                <span class="ig-tag ig-tag-blue">Day Use</span>
+                <span class="ig-tag ig-tag-blue">Pacotes</span>
+              </div>
+            </div>
+            <div class="ig-card ig-card-orange">
+              <span class="ig-card-icon">📱</span>
+              <div class="ig-card-lbl">Canal</div>
+              <div class="ig-card-title">WhatsApp</div>
+              <div class="ig-card-desc">Canal primário bidirecional via protocolo WA Business, sem depender da API oficial do Meta.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-orange">Evolution API</span>
+                <span class="ig-tag ig-tag-orange">Open-Source</span>
+              </div>
+            </div>
+            <div class="ig-card ig-card-pink">
+              <span class="ig-card-icon">🏨</span>
+              <div class="ig-card-lbl">Administração</div>
+              <div class="ig-card-title">Equipe da Pousada</div>
+              <div class="ig-card-desc">Aciona check-in, check-out e confirma pagamentos via comandos simples.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-pink">/checkin RSV123</span>
+                <span class="ig-tag ig-tag-pink">/checkout RSV123</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SETA 1 -->
+          <div class="ig-arrow">
+            <div class="ig-arrow-inner">
+              <span class="ig-arrow-lbl">webhook · mensagem</span>
+              <div class="ig-arrow-shaft"></div>
+              <div class="ig-arrow-head"></div>
+            </div>
+          </div>
+
+          <!-- CAMADA DE INTELIGÊNCIA -->
+          <div class="ig-section-label"><span>Camada de Inteligência (Agente de IA)</span></div>
+          <div class="ig-row-core">
+
+            <div class="ig-card ig-card-blue">
+              <span class="ig-card-icon">🧠</span>
+              <div class="ig-card-lbl">LLM / Dify</div>
+              <div class="ig-card-title">Agente Maria</div>
+              <div class="ig-card-desc">Cérebro cognitivo. Interpreta intenção, gerencia persona e decide o próximo passo com base no estado atual.</div>
+              <div class="ig-versions-row">
+                <span class="ig-version-badge">V1</span><span class="ig-version-badge">V2</span>
+                <span class="ig-version-badge">V3</span><span class="ig-version-badge">V4</span>
+                <span class="ig-version-badge">V5</span><span class="ig-version-badge">V6 ✦</span>
+              </div>
+              <div class="ig-tag-list" style="margin-top:9px">
+                <span class="ig-tag ig-tag-blue">Persona</span>
+                <span class="ig-tag ig-tag-blue">ReAct</span>
+                <span class="ig-tag ig-tag-blue">State-aware</span>
+              </div>
+            </div>
+
+            <div class="ig-card-hero">
+              <div class="ig-card-lbl">Orquestração Central</div>
+              <div class="ig-card-title">⚡ N8N Workflows</div>
+              <div class="ig-card-desc" style="margin-bottom:14px;">Sistema motor do agente. Mantém estado entre mensagens, executa validações de negócio, aciona o banco e roteia notificações.</div>
+              <div class="ig-hero-subgrid">
+                <div class="ig-hero-block">
+                  <div class="ig-hero-block-title">Estado / Memória</div>
+                  <div class="ig-hero-block-body">Injeta variáveis de contexto no Dify a cada turno — tipo de serviço, datas, pessoas, confirmação</div>
+                </div>
+                <div class="ig-hero-block green">
+                  <div class="ig-hero-block-title">Validações</div>
+                  <div class="ig-hero-block-body">Diárias mínimas, períodos de pacote, disponibilidade real, dados completos</div>
+                </div>
+                <div class="ig-hero-block purple">
+                  <div class="ig-hero-block-title">Decisão de Fluxo</div>
+                  <div class="ig-hero-block-body">coleta → aguardar_confirmação → processar_reserva → notificar</div>
+                </div>
+                <div class="ig-hero-block orange">
+                  <div class="ig-hero-block-title">Notificações</div>
+                  <div class="ig-hero-block-body">Dispara para cliente e equipe em paralelo via Evolution API</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ig-card ig-card-purple">
+              <span class="ig-card-icon">🗄️</span>
+              <div class="ig-card-lbl">Banco de Dados</div>
+              <div class="ig-card-title">Supabase / PG</div>
+              <div class="ig-card-desc">Consistência transacional. Stored procedures validam independentemente das camadas acima.</div>
+              <div style="margin-top:10px">
+                <div class="ig-sql-item"><div class="ig-sql-dot" style="background:#A78BFA"></div>verificar_e_criar_reserva</div>
+                <div class="ig-sql-item"><div class="ig-sql-dot" style="background:#34D399"></div>confirmar_reserva_transacional</div>
+                <div class="ig-sql-item"><div class="ig-sql-dot" style="background:#FCD34D"></div>limpar_bloqueios_expirados</div>
+                <div class="ig-sql-item"><div class="ig-sql-dot" style="background:#60A5FA"></div>job_limpeza (pg_cron)</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- SETA 2 -->
+          <div class="ig-arrow">
+            <div class="ig-arrow-inner">
+              <span class="ig-arrow-lbl">stored procedures · REST API</span>
+              <div class="ig-arrow-shaft"></div>
+              <div class="ig-arrow-head"></div>
+            </div>
+          </div>
+
+          <!-- MODELO DE DADOS -->
+          <div class="ig-section-label"><span>Modelo de Dados (PostgreSQL)</span></div>
+          <div class="ig-row-data">
+            <div class="ig-card ig-card-purple">
+              <span class="ig-card-icon">📋</span>
+              <div class="ig-card-lbl">Tabela principal</div>
+              <div class="ig-card-title">reservas_confirmadas</div>
+              <div class="ig-card-desc">Ciclo de vida completo da reserva.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-purple">pendente</span><span class="ig-tag ig-tag-purple">confirmada</span>
+                <span class="ig-tag ig-tag-purple">check_in</span><span class="ig-tag ig-tag-purple">check_out</span>
+                <span class="ig-tag ig-tag-purple">expirada</span>
+              </div>
+            </div>
+            <div class="ig-card ig-card-cyan">
+              <span class="ig-card-icon">🔒</span>
+              <div class="ig-card-lbl">Disponibilidade</div>
+              <div class="ig-card-title">disponibilidade_quartos</div>
+              <div class="ig-card-desc">Controle por data e tipo. Bloqueios temporários de 30 min. Anti-overbooking otimista.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-cyan">Bloqueio 30min</span>
+                <span class="ig-tag ig-tag-cyan">pg_cron 10min</span>
+              </div>
+            </div>
+            <div class="ig-card ig-card-green">
+              <span class="ig-card-icon">📜</span>
+              <div class="ig-card-lbl">Auditoria</div>
+              <div class="ig-card-title">historico_status_reserva</div>
+              <div class="ig-card-desc">Registro rastreável de todas as transições de status, responsável e motivo.</div>
+              <div class="ig-tag-list">
+                <span class="ig-tag ig-tag-green">Imutável</span>
+                <span class="ig-tag ig-tag-green">Auditoria completa</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- FLUXOS OPERACIONAIS -->
+          <div class="ig-section-label"><span>Fluxos Operacionais Automatizados</span></div>
+          <div class="ig-row-ops">
+            <div class="ig-flow-card" style="border-top:2px solid #3B82F6">
+              <div class="ig-flow-number">01 · RESERVA</div>
+              <div class="ig-flow-title">Fluxo de Reserva</div>
+              <ul class="ig-flow-list">
+                <li>Maria coleta dados</li><li>N8N valida disponibilidade</li>
+                <li>Cria reserva (pendente)</li><li>Gera código único</li>
+                <li>Envia instruções PIX</li><li>Confirma pagamento</li>
+              </ul>
+            </div>
+            <div class="ig-flow-card" style="border-top:2px solid #10B981">
+              <div class="ig-flow-number">02 · CHECK-IN</div>
+              <div class="ig-flow-title">Check-in Digital</div>
+              <ul class="ig-flow-list">
+                <li>Equipe: /checkin RSV123</li><li>N8N valida horário</li>
+                <li>Busca reserva no BD</li><li>Verifica elegibilidade</li>
+                <li>Atualiza → check_in</li><li>Notifica cliente + admin</li>
+              </ul>
+            </div>
+            <div class="ig-flow-card" style="border-top:2px solid #EC4899">
+              <div class="ig-flow-number">03 · CHECK-OUT</div>
+              <div class="ig-flow-title">Check-out Digital</div>
+              <ul class="ig-flow-list">
+                <li>Equipe: /checkout RSV123</li><li>Avaliação do quarto</li>
+                <li>Notas limpeza/danos</li><li>Atualiza → check_out</li>
+                <li>Alimenta fila limpeza</li><li>Notifica cliente + admin</li>
+              </ul>
+            </div>
+            <div class="ig-flow-card" style="border-top:2px solid #F59E0B">
+              <div class="ig-flow-number">04 · RELATÓRIOS</div>
+              <div class="ig-flow-title">Automações Diárias</div>
+              <ul class="ig-flow-list">
+                <li>Check-ins do dia</li><li>Check-outs do dia</li>
+                <li>Reservas pendentes</li><li>Ocupação geral</li>
+                <li>Fila de limpeza</li><li>Entrega via WhatsApp</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- STATS -->
+          <div class="ig-row-stats">
+            <div class="ig-stat-card"><div class="ig-stat-value">6</div><div class="ig-stat-label">Versões do agente<br>Maria (prompt)</div></div>
+            <div class="ig-stat-card"><div class="ig-stat-value">3</div><div class="ig-stat-label">Meses de<br>desenvolvimento</div></div>
+            <div class="ig-stat-card"><div class="ig-stat-value">24/7</div><div class="ig-stat-label">Atendimento<br>automatizado</div></div>
+            <div class="ig-stat-card"><div class="ig-stat-value">4</div><div class="ig-stat-label">Fluxos operacionais<br>automatizados</div></div>
+          </div>
+
+        </div><!-- /ig-grid -->
+      </div><!-- /ig-wrap -->
+
+    </div><!-- /infographic-frame -->
+  </div><!-- /infographic-wrapper -->
+
+
+  <!-- ── SEÇÃO 3 ── -->
+  <h2 id="agente" data-num="03 — Agente de IA" class="fade-in">Maria Como Agente de IA: Além do Chatbot Convencional</h2>
+
+  <p class="fade-in">Um dos aspectos mais relevantes — e menos óbvios — deste projeto é que a Maria não é um simples chatbot com respostas pré-programadas. Ela é um <strong>agente de IA</strong>: um sistema autônomo que percebe o contexto, raciocina sobre ele, decide qual ação tomar e executa essa ação com consequências reais no mundo.</p>
+
+  <h3>O que diferencia um Agente de IA de um chatbot tradicional</h3>
+
+  <p class="fade-in">Um chatbot convencional opera com lógica de decisão determinística: se o usuário digitar X, o sistema responde Y. O mapeamento é estático, frágil a variações de linguagem e incapaz de lidar com situações não previstas. Um agente de IA, por outro lado, combina três capacidades que o elevam a outra categoria:</p>
+
+  <div class="agent-grid fade-in">
+    <div class="agent-card">
+      <div class="agent-card-name">01</div>
+      <div class="agent-card-sub">Percepção de Estado</div>
+      <div class="agent-card-desc">A Maria lê variáveis de contexto a cada turno e usa esse estado para determinar onde está na conversa antes de decidir o que fazer.</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-card-name">02</div>
+      <div class="agent-card-sub">Raciocínio sobre Objetivos</div>
+      <div class="agent-card-desc">O prompt instrui a Maria não apenas sobre <em>o que</em> dizer, mas sobre <em>por que</em> cada etapa existe. Ela entende que seu objetivo é criar uma pré-reserva válida.</div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-card-name">03</div>
+      <div class="agent-card-sub">Ações com Efeitos Externos</div>
+      <div class="agent-card-desc">Ao confirmar os dados, a Maria aciona um webhook que desencadeia operações reais: escrita no banco, geração de código de reserva, envio de instruções de pagamento.</div>
+    </div>
+  </div>
+
+  <div class="callout fade-in">
+    <div class="callout-label">Padrão ReAct</div>
+    <p>A arquitetura combina <strong>Dify como módulo de raciocínio linguístico</strong> e <strong>N8N como módulo de execução e gestão de estado</strong> — uma implementação prática do padrão <em>ReAct (Reasoning + Acting)</em> da literatura de agentes de IA, construída com ferramentas acessíveis e sem uma linha de código Python de orquestração.</p>
+  </div>
+
+  <h3>O Problema da Memória em Agentes Conversacionais</h3>
+
+  <p class="fade-in">LLMs são, por natureza, <em>stateless</em>: cada chamada à API é independente, sem memória das interações anteriores. Para um chatbot simples, isso não é problema. Para um agente que conduz uma negociação de múltiplos turnos — coletando dados, validando, aguardando confirmação, processando — é uma limitação crítica.</p>
+
+  <p class="fade-in">A solução implementada foi <strong>memória externalizada com injeção de contexto</strong>: o N8N mantém um objeto de estado estruturado e o injeta no contexto do prompt a cada nova mensagem. Para o modelo, cada turno parece uma conversa completa com todo o histórico relevante. Para o sistema, o estado é sempre consistente e auditável.</p>
+
+  <div class="callout-inline fade-in">
+    Essa abordagem é mais robusta do que depender de janelas de contexto longas — que aumentam custo e latência — e mais flexível do que soluções de memória vetorial, adequadas para recuperação de conhecimento, mas não para <strong>gestão de estado transacional</strong>.
+  </div>
+
+  <h3>Tomada de Decisão em Múltiplas Camadas</h3>
+
+  <p class="fade-in">A Maria não toma decisões em uma única camada. O sistema implementa uma hierarquia com três níveis independentes:</p>
+
+  <div class="pros-cons fade-in" style="grid-template-columns: 1fr;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      <div class="cons-box" style="border-left-color:#111;background:#f7f7f7;">
+        <h4 style="color:#111;">Nível LLM (Dify)</h4>
+        <ul>
+          <li>Identifica tipo de serviço</li>
+          <li>Distingue interesse de confirmação</li>
+          <li>Extrai datas e pessoas</li>
+          <li>Define próximo passo</li>
+        </ul>
+      </div>
+      <div class="cons-box" style="border-left-color:#555;background:#f7f7f7;">
+        <h4 style="color:#555;">Nível Orquestrador (N8N)</h4>
+        <ul>
+          <li>Verifica diárias mínimas</li>
+          <li>Detecta períodos de pacote</li>
+          <li>Confirma disponibilidade real</li>
+          <li>Valida dados completos</li>
+        </ul>
+      </div>
+      <div class="cons-box">
+        <h4>Nível Banco (PostgreSQL)</h4>
+        <ul>
+          <li>Verifica condições de corrida</li>
+          <li>Gerencia bloqueios</li>
+          <li>Garante integridade</li>
+          <li>Nunca confia nas camadas acima</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 4 ── -->
+  <h2 id="fluxo" data-num="04 — Fluxo" class="fade-in">Fluxo Completo de uma Reserva: Do "Olá" à Confirmação</h2>
+
+  <p class="fade-in">Para tornar a arquitetura mais concreta, o caminho completo de uma reserva de hospedagem:</p>
+
+  <ol class="flow-steps fade-in">
+    <li>O hóspede envia uma mensagem no WhatsApp demonstrando interesse em se hospedar.</li>
+    <li>Maria identifica a intenção e inicia a coleta: datas, número de pessoas e tipo de acomodação.</li>
+    <li>Silenciosamente, Maria verifica as políticas de diárias mínimas. Se inadequado, informa <em>"sem disponibilidade"</em> e sugere alternativas — sem revelar a política.</li>
+    <li>Se o período incluir data comemorativa com pacote fechado, Maria apresenta as opções com tabela de preços e aguarda escolha do cliente.</li>
+    <li>Com todos os dados coletados, Maria apresenta resumo completo e solicita confirmação explícita.</li>
+    <li>Ao receber o "sim", um webhook é disparado para o N8N.</li>
+    <li>O N8N executa <code>verificar_e_criar_reserva</code>: verifica disponibilidade, cria reserva com status "pendente" e registra bloqueios temporários.</li>
+    <li>O sistema gera o código único de reserva e envia instruções de pagamento via PIX.</li>
+    <li>Ao confirmar o pagamento, o N8N aciona <code>confirmar_reserva_transacional</code>: status "confirmada", bloqueios temporários substituídos por definitivos.</li>
+    <li>No dia do check-in, a equipe registra a entrada via comando e o sistema notifica o hóspede.</li>
+  </ol>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 5 ── -->
+  <h2 id="tempo" data-num="05 — Desenvolvimento" class="fade-in">Tempo de Desenvolvimento</h2>
+
+  <p class="fade-in">O projeto foi desenvolvido de forma iterativa ao longo de <strong>aproximadamente 3 meses</strong>, divididos em três fases principais:</p>
+
+  <div class="timeline fade-in">
+    <div class="timeline-item">
+      <div class="timeline-phase">Fase 1 · 4 semanas</div>
+      <div class="timeline-title">Fundação</div>
+      <div class="timeline-desc">Modelagem do banco de dados no Supabase, desenvolvimento das stored procedures transacionais e configuração da infraestrutura base — N8N, Evolution API, conexões e autenticações.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Fase 2 · 5 semanas</div>
+      <div class="timeline-title">Automações Operacionais</div>
+      <div class="timeline-desc">Desenvolvimento dos fluxos de N8N para check-in, check-out, relatórios e limpeza. Criação da Maria nas versões V1 a V3 com os fluxos básicos de hospedagem e Day Use.</div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-phase">Fase 3 · 3 semanas</div>
+      <div class="timeline-title">Refinamentos e IA Avançada</div>
+      <div class="timeline-desc">Versões V4 a V6 da Maria, incorporando sistema de estado persistente, distinção entre interesse e confirmação, tratamento de pacotes especiais e integração completa com validações em tempo real.</div>
+    </div>
+  </div>
+
+  <p class="fade-in">O volume de iterações na camada de IA — seis versões do prompt principal, dezenas de ajustes nos nós do N8N — reflete uma realidade importante em projetos de sistemas conversacionais: o comportamento emergente dos LLMs exige validação contínua com casos reais. Cada nova versão da Maria surgiu de um problema identificado em produção — uma pergunta repetida desnecessariamente, uma reserva processada antes da confirmação explícita, uma política interna revelada por engano.</p>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 6 ── -->
+  <h2 id="desafios" data-num="06 — Desafios" class="fade-in">Desafios Técnicos e Soluções</h2>
+
+  <h3>Estado em conversas longas</h3>
+  <p class="fade-in">LLMs não têm memória nativa entre mensagens. A solução foi externalizar o estado em variáveis gerenciadas pelo N8N, injetadas no contexto do prompt a cada interação — sistema híbrido onde a IA é <em>stateless</em>, mas a conversa tem memória.</p>
+
+  <h3>Prevenção de overbooking em alta concorrência</h3>
+  <p class="fade-in">A solução de bloqueio temporário otimista com expiração automática via <code>pg_cron</code> garantiu consistência transacional mesmo com múltiplas requisições simultâneas — algo que uma abordagem <em>naive</em> de leitura seguida de escrita não conseguiria garantir.</p>
+
+  <h3>Políticas de negócio transparentes ao cliente</h3>
+  <p class="fade-in">A política de estadia mínima é validada silenciosamente no N8N antes de qualquer resposta da Maria, retornando apenas mensagens genéricas de indisponibilidade com sugestão de datas alternativas — sem expor as regras internas.</p>
+
+  <h3>Pacotes fechados em datas comemorativas</h3>
+  <p class="fade-in">O sistema detecta automaticamente quando uma solicitação coincide com um período de pacote e bloqueia reservas avulsas, redirecionando o cliente para a lógica de pacotes com tabela de preços dinâmica retornada pelo N8N.</p>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 7 ── -->
+  <h2 id="stack" data-num="07 — Stack" class="fade-in">Reflexões sobre a Stack Tecnológica</h2>
+
+  <p class="fade-in">A escolha de N8N, Dify e Supabase em vez de soluções SaaS proprietárias foi deliberada e reflete uma filosofia de <strong>soberania tecnológica</strong>: todo o sistema roda em infraestrutura própria via Easypanel, o código é auditável e modificável, sem dependência de contratos ou precificações de terceiros que podem mudar a qualquer momento.</p>
+
+  <div class="tech-grid fade-in">
+    <div class="tech-card dify">
+      <span class="card-tag">IA / LLM</span>
+      <div class="card-title">Dify</div>
+      <hr class="card-divider">
+      <div class="card-pro">Versionamento de prompts</div>
+      <div class="card-pro">Injeção de variáveis dinâmicas</div>
+      <div class="card-pro">Open-source, auto-hospedável</div>
+      <hr class="card-divider">
+      <div class="card-con">Curva de aprendizado para fluxos complexos</div>
+    </div>
+    <div class="tech-card n8n">
+      <span class="card-tag">Orquestração</span>
+      <div class="card-title">N8N</div>
+      <hr class="card-divider">
+      <div class="card-pro">Visual + código JavaScript juntos</div>
+      <div class="card-pro">Webhooks e triggers nativos</div>
+      <div class="card-pro">Sem custo por execução</div>
+      <hr class="card-divider">
+      <div class="card-con">Debug de fluxos longos pode ser trabalhoso</div>
+    </div>
+    <div class="tech-card supa">
+      <span class="card-tag">Banco de Dados</span>
+      <div class="card-title">Supabase</div>
+      <hr class="card-divider">
+      <div class="card-pro">PostgreSQL completo com pg_cron</div>
+      <div class="card-pro">API REST nativa automática</div>
+      <div class="card-pro">Stored procedures robustas</div>
+      <hr class="card-divider">
+      <div class="card-con">Configuração inicial de RLS exige atenção</div>
+    </div>
+    <div class="tech-card evo">
+      <span class="card-tag">Comunicação</span>
+      <div class="card-title">Evolution API</div>
+      <hr class="card-divider">
+      <div class="card-pro">Protocolo WA Business sem Meta</div>
+      <div class="card-pro">Sem custo por mensagem</div>
+      <div class="card-pro">Open-source e extensível</div>
+      <hr class="card-divider">
+      <div class="card-con">Requer manutenção do servidor próprio</div>
+    </div>
+  </div>
+
+  <p class="fade-in">O N8N mostrou-se extraordinariamente flexível para lógica de negócio complexa. A capacidade de misturar nós visuais com blocos de código JavaScript personalizado permite que automações simples e sofisticadas coexistam no mesmo fluxo — algo que plataformas puramente visuais não conseguem e que plataformas puramente de código tornam desnecessariamente verboso.</p>
+
+  <div class="ornament fade-in">— ✦ —</div>
+
+  <!-- ── SEÇÃO 8 ── -->
+  <h2 id="conclusao" data-num="08 — Conclusão" class="fade-in">Conclusões e Próximos Passos</h2>
+
+  <div class="conclusion fade-in">
+    <div class="conclusion-label">Síntese</div>
+    <p>Este projeto demonstra que automação de gestão hoteleira de alta qualidade — sustentada por agentes de IA reais, não apenas chatbots — não é exclusividade de grandes redes com equipes de TI robustas. Com as ferramentas certas e uma arquitetura bem pensada, é possível dotar pequenos meios de hospedagem de capacidades operacionais que antes eram inacessíveis.</p>
+    <br>
+    <p>A Maria continuará evoluindo. Os próximos passos incluem a integração com sistemas de pagamento para confirmação automática de PIX, a implementação de um painel web para visualizar ocupação em tempo real, e a expansão do sistema de avaliação de quartos para um módulo de manutenção preventiva.</p>
+    <br>
+    <p>A modularidade da arquitetura permite que os fluxos de N8N, o schema do Supabase e a persona do Dify sejam adaptados para diferentes tipos de meios de hospedagem com esforço relativamente baixo — tornando este projeto um ponto de partida replicável para o setor.</p>
+    <br>
+    <p>O paradigma agêntico não substitui a equipe da pousada — ele a libera para o que realmente importa: o <strong>acolhimento presencial</strong>, a resolução de situações excepcionais e a construção de relacionamentos que nenhum sistema automatizado consegue replicar.</p>
+  </div>
+
+</article>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <strong>Jonh Selmo</strong> &nbsp;·&nbsp; Engenheiro de Automação e Sistemas de IA &nbsp;·&nbsp; N8N · Dify · Supabase · LLM Applications
+</footer>
+
+<script>
+  // ── PROGRESS BAR ──
+  const bar = document.getElementById('progress');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    bar.style.width = pct + '%';
+  });
+
+  // ── FADE-IN ON SCROLL ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
